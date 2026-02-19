@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<!-- saved from url=(0059)file:///C:/Users/botlm/Downloads/parry-hitbox-visual_2.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parry Hitbox Visualizer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    color: #e0e0e0;
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px 20px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 30px;
+    letter-spacing: 1px;
+  }
+
+  .canvas-wrap {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  canvas {
+    border-radius: 12px;
+    background: #0d0d14;
+    border: 1px solid #1a1a2e;
+  }
+
+  .controls {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  .control-group {
+    background: #111119;
+    border: 1px solid #1e1e30;
+    border-radius: 10px;
+    padding: 14px 20px;
+    min-width: 200px;
+  }
+
+  .control-group label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #555;
+    margin-bottom: 8px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .control-group .value-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.4rem;
+    color: #f0c040;
+    margin-bottom: 6px;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: #f0c040;
+    cursor: pointer;
+  }
+
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #111119;
+    border: 1px solid #1e1e30;
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  .legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .legend-text {
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+
+  .legend-text strong {
+    color: #fff;
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .legend-text span {
+    color: #777;
+    font-size: 0.72rem;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .explanation {
+    background: #111119;
+    border: 1px solid #1e1e30;
+    border-radius: 10px;
+    padding: 22px 26px;
+    line-height: 1.7;
+    font-size: 0.92rem;
+    color: #aaa;
+  }
+
+  .explanation h2 {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #ccc;
+    margin-bottom: 10px;
+  }
+
+  .explanation code {
+    background: #1a1a28;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.82rem;
+    color: #f0c040;
+  }
+
+  .result-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    pointer-events: none;
+    transition: all 0.2s;
+  }
+
+  .result-badge.parry {
+    background: rgba(64, 160, 255, 0.15);
+    border: 1px solid rgba(64, 160, 255, 0.4);
+    color: #40a0ff;
+  }
+
+  .result-badge.hit {
+    background: rgba(255, 70, 70, 0.15);
+    border: 1px solid rgba(255, 70, 70, 0.4);
+    color: #ff4646;
+  }
+
+  .hint {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: #444;
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Parry / Hit Detection</h1>
+  <p class="subtitle">angleDifference threshold = 150°</p>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>Parry Angle Threshold</label>
+      <div class="value-display" id="angleVal">150°</div>
+      <input type="range" id="angleSlider" min="30" max="180" value="150" step="1">
+    </div>
+    <div class="control-group">
+      <label>Current Angle</label>
+      <div class="value-display" id="currentAngle">135°</div>
+      <div id="currentResult" style="font-size: 0.75rem; font-family: &quot;Share Tech Mono&quot;, monospace; color: rgb(64, 160, 255);">→ BLOCKED (if victim is blocking)</div>
+    </div>
+  </div>
+
+  <p class="hint">↕ Drag the attacker (red) around the victim to see the angle change</p>
+
+  <div class="canvas-wrap">
+    <canvas id="canvas" width="600" height="600"></canvas>
+    <div class="result-badge parry" id="resultBadge">PARRY</div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#40a0ff;"></div>
+      <div class="legend-text">
+        <strong>Parry Zone</strong>
+        <span>angle &lt; threshold &amp; blocking</span>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#ff4646;"></div>
+      <div class="legend-text">
+        <strong>Hit Zone (bypass block)</strong>
+        <span>angle ≥ threshold → always damages</span>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:rgba(64,160,255,0.12); border:1px solid rgba(64,160,255,0.3);"></div>
+      <div class="legend-text">
+        <strong>Victim's Front Arc</strong>
+        <span>where they're looking (LookVector)</span>
+      </div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:rgba(255,70,70,0.12); border:1px solid rgba(255,70,70,0.3);"></div>
+      <div class="legend-text">
+        <strong>Victim's Back Arc</strong>
+        <span>backstab zone — can't parry here</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="explanation">
+    <h2>How it works</h2>
+    <p>
+      DR Tech code computes a <strong>2D angle</strong> (XZ plane, ignoring Y height) between the <strong>victim's LookVector</strong>
+      and the <strong>direction from victim → attacker</strong>.
+    </p>
+    <p style="margin-top:10px;">
+      <code>angle = acos( dot(lookDir2D, toAttacker2D) )</code>
+    </p>
+    <p style="margin-top:10px;">
+      If <code>angle &lt; 150°</code> and the victim is <strong>blocking</strong>, the attack is <strong>parried</strong>
+      (endurance damage + recoil). If <code>angle ≥ 150°</code>, the attacker is behind the victim and the hit
+      <strong>always deals damage</strong> regardless of blocking — a backstab.
+    </p>
+    <p style="margin-top:10px;">
+      At 150°, the parry cone covers most directions in front and to the sides. Only a narrow ~30° wedge directly behind the victim is unblockable.
+      Drag the slider to see how changing the threshold would affect the parry/hit zones.
+    </p>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const angleSlider = document.getElementById('angleSlider');
+const angleValEl = document.getElementById('angleVal');
+const currentAngleEl = document.getElementById('currentAngle');
+const currentResultEl = document.getElementById('currentResult');
+const resultBadge = document.getElementById('resultBadge');
+
+const W = canvas.width, H = canvas.height;
+const CX = W / 2, CY = H / 2;
+const RADIUS = 220;
+
+let threshold = 150;
+let attackerAngle = Math.PI * 0.75; // angle in radians around the victim
+let dragging = false;
+
+// Victim always faces "up" (negative Y on canvas = forward in game)
+const victimFaceAngle = -Math.PI / 2; // points up
+
+function toRad(deg) { return deg * Math.PI / 180; }
+function toDeg(rad) { return rad * 180 / Math.PI; }
+
+function getAttackerPos() {
+  return {
+    x: CX + Math.cos(attackerAngle) * RADIUS * 0.7,
+    y: CY + Math.sin(attackerAngle) * RADIUS * 0.7
+  };
+}
+
+function computeAngleDiff() {
+  // Direction from victim to attacker (canvas coords)
+  const ap = getAttackerPos();
+  const dx = ap.x - CX;
+  const dy = ap.y - CY;
+
+  // Victim look direction (up = -Y in canvas)
+  const lx = Math.cos(victimFaceAngle);
+  const ly = Math.sin(victimFaceAngle);
+
+  // Normalize
+  const mag1 = Math.sqrt(dx * dx + dy * dy);
+  const mag2 = Math.sqrt(lx * lx + ly * ly);
+  if (mag1 < 0.001 || mag2 < 0.001) return 180;
+
+  const dot = (lx * dx / mag1) + (ly * dy / mag1);
+  return toDeg(Math.acos(Math.max(-1, Math.min(1, dot))));
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid dots
+  ctx.fillStyle = '#151520';
+  for (let x = 0; x < W; x += 30) {
+    for (let y = 0; y < H; y += 30) {
+      ctx.beginPath();
+      ctx.arc(x, y, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  const threshRad = toRad(threshold);
+
+  // Draw parry zone (front arc)
+  // The parry zone is the cone where angle < threshold, centered on the look direction
+  const halfParry = threshRad;
+
+  // Parry fill (blue)
+  ctx.beginPath();
+  ctx.moveTo(CX, CY);
+  ctx.arc(CX, CY, RADIUS, victimFaceAngle - halfParry, victimFaceAngle + halfParry);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(64, 160, 255, 0.07)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(64, 160, 255, 0.25)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Hit zone fill (red) — the remaining arc
+  ctx.beginPath();
+  ctx.moveTo(CX, CY);
+  ctx.arc(CX, CY, RADIUS, victimFaceAngle + halfParry, victimFaceAngle - halfParry);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255, 70, 70, 0.07)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255, 70, 70, 0.25)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Edge lines of parry cone
+  const edgeLen = RADIUS + 10;
+  ctx.setLineDash([6, 4]);
+
+  // Left edge
+  ctx.beginPath();
+  ctx.moveTo(CX, CY);
+  ctx.lineTo(CX + Math.cos(victimFaceAngle - halfParry) * edgeLen, CY + Math.sin(victimFaceAngle - halfParry) * edgeLen);
+  ctx.strokeStyle = 'rgba(64, 160, 255, 0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Right edge
+  ctx.beginPath();
+  ctx.moveTo(CX, CY);
+  ctx.lineTo(CX + Math.cos(victimFaceAngle + halfParry) * edgeLen, CY + Math.sin(victimFaceAngle + halfParry) * edgeLen);
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  // Look direction arrow
+  const arrowLen = 90;
+  const ax = CX + Math.cos(victimFaceAngle) * arrowLen;
+  const ay = CY + Math.sin(victimFaceAngle) * arrowLen;
+
+  ctx.beginPath();
+  ctx.moveTo(CX, CY);
+  ctx.lineTo(ax, ay);
+  ctx.strokeStyle = '#e0e0e0';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Arrowhead
+  const aSize = 10;
+  ctx.beginPath();
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(ax + Math.cos(victimFaceAngle + 2.7) * aSize, ay + Math.sin(victimFaceAngle + 2.7) * aSize);
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(ax + Math.cos(victimFaceAngle - 2.7) * aSize, ay + Math.sin(victimFaceAngle - 2.7) * aSize);
+  ctx.stroke();
+
+  // Label: "LookVector"
+  ctx.font = '11px "Share Tech Mono", monospace';
+  ctx.fillStyle = '#888';
+  ctx.textAlign = 'center';
+  ctx.fillText('LookVector', ax + 2, ay - 12);
+
+  // Angle arc labels
+  // Parry label
+  const pLabelAngle = victimFaceAngle;
+  const pLabelR = RADIUS + 28;
+  ctx.fillStyle = 'rgba(64, 160, 255, 0.7)';
+  ctx.font = '600 12px "Rajdhani", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('PARRY ZONE', CX + Math.cos(pLabelAngle) * pLabelR, CY + Math.sin(pLabelAngle) * pLabelR);
+
+  // Hit label
+  const hLabelAngle = victimFaceAngle + Math.PI;
+  const hLabelR = RADIUS + 28;
+  ctx.fillStyle = 'rgba(255, 70, 70, 0.7)';
+  ctx.fillText('HIT ZONE', CX + Math.cos(hLabelAngle) * hLabelR, CY + Math.sin(hLabelAngle) * hLabelR);
+  ctx.font = '10px "Share Tech Mono", monospace';
+  ctx.fillStyle = 'rgba(255, 70, 70, 0.45)';
+  ctx.fillText('(bypass block)', CX + Math.cos(hLabelAngle) * (hLabelR + 16), CY + Math.sin(hLabelAngle) * (hLabelR + 16));
+
+  // Threshold angle arc
+  const arcR = 55;
+  ctx.beginPath();
+  ctx.arc(CX, CY, arcR, victimFaceAngle, victimFaceAngle + halfParry);
+  ctx.strokeStyle = 'rgba(240, 192, 64, 0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Threshold label
+  const tLabelAng = victimFaceAngle + halfParry * 0.5;
+  ctx.fillStyle = '#f0c040';
+  ctx.font = '700 13px "Rajdhani", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(threshold + '°', CX + Math.cos(tLabelAng) * (arcR + 16), CY + Math.sin(tLabelAng) * (arcR + 16));
+
+  // Victim (center)
+  // Body circle
+  ctx.beginPath();
+  ctx.arc(CX, CY, 20, 0, Math.PI * 2);
+  ctx.fillStyle = '#2a2a3e';
+  ctx.fill();
+  ctx.strokeStyle = '#40a0ff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // "V" label
+  ctx.fillStyle = '#fff';
+  ctx.font = '700 14px "Rajdhani", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('VICTIM', CX, CY + 32);
+
+  // Shield indicator on victim (left side relative to facing)
+  if (true) {
+    const shieldAngle = victimFaceAngle - 0.3;
+    const shieldDist = 22;
+    const sx = CX + Math.cos(shieldAngle) * shieldDist;
+    const sy = CY + Math.sin(shieldAngle) * shieldDist;
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(victimFaceAngle);
+    ctx.fillStyle = 'rgba(64, 160, 255, 0.4)';
+    ctx.fillRect(-3, -10, 6, 20);
+    ctx.strokeStyle = 'rgba(64, 160, 255, 0.7)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-3, -10, 6, 20);
+    ctx.restore();
+  }
+
+  // Attacker
+  const ap = getAttackerPos();
+  const angleDiff = computeAngleDiff();
+  const isParry = angleDiff < threshold;
+
+  // Line from victim to attacker
+  ctx.beginPath();
+  ctx.moveTo(CX, CY);
+  ctx.lineTo(ap.x, ap.y);
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = isParry ? 'rgba(64, 160, 255, 0.3)' : 'rgba(255, 70, 70, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Angle arc from look direction to attacker direction
+  const toAttackerAngle = Math.atan2(ap.y - CY, ap.x - CX);
+  const drawArcR = 40;
+
+  // Determine shortest arc direction
+  let startA = victimFaceAngle;
+  let endA = toAttackerAngle;
+  let diff = endA - startA;
+  while (diff > Math.PI) diff -= Math.PI * 2;
+  while (diff < -Math.PI) diff += Math.PI * 2;
+
+  ctx.beginPath();
+  if (diff >= 0) {
+    ctx.arc(CX, CY, drawArcR, startA, startA + diff);
+  } else {
+    ctx.arc(CX, CY, drawArcR, startA + diff, startA);
+  }
+  ctx.strokeStyle = isParry ? 'rgba(64, 160, 255, 0.6)' : 'rgba(255, 70, 70, 0.6)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Attacker body
+  ctx.beginPath();
+  ctx.arc(ap.x, ap.y, 16, 0, Math.PI * 2);
+  ctx.fillStyle = isParry ? '#1a2a40' : '#3a1a1a';
+  ctx.fill();
+  ctx.strokeStyle = isParry ? '#40a0ff' : '#ff4646';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Sword on attacker
+  const swordAngle = Math.atan2(CY - ap.y, CX - ap.x);
+  ctx.save();
+  ctx.translate(ap.x, ap.y);
+  ctx.rotate(swordAngle);
+  ctx.fillStyle = '#888';
+  ctx.fillRect(14, -1.5, 22, 3);
+  ctx.fillStyle = '#bbb';
+  ctx.fillRect(34, -2.5, 4, 5);
+  ctx.restore();
+
+  // "A" label
+  ctx.fillStyle = '#fff';
+  ctx.font = '700 14px "Rajdhani", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('ATTACKER', ap.x, ap.y + 28);
+
+  // Drag handle indicator
+  ctx.beginPath();
+  ctx.arc(ap.x, ap.y, 22, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3,3]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Update UI
+  currentAngleEl.textContent = Math.round(angleDiff) + '°';
+
+  if (isParry) {
+    currentResultEl.textContent = '→ BLOCKED (if victim is blocking)';
+    currentResultEl.style.color = '#40a0ff';
+    resultBadge.className = 'result-badge parry';
+    resultBadge.textContent = 'PARRY';
+  } else {
+    currentResultEl.textContent = '→ HITS THROUGH BLOCK';
+    currentResultEl.style.color = '#ff4646';
+    resultBadge.className = 'result-badge hit';
+    resultBadge.textContent = 'BACKSTAB';
+  }
+}
+
+// Slider
+angleSlider.addEventListener('input', () => {
+  threshold = parseInt(angleSlider.value);
+  angleValEl.textContent = threshold + '°';
+  draw();
+});
+
+// Drag attacker
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (W / rect.width);
+  const my = (e.clientY - rect.top) * (H / rect.height);
+  const ap = getAttackerPos();
+  const dist = Math.sqrt((mx - ap.x) ** 2 + (my - ap.y) ** 2);
+  if (dist < 30) dragging = true;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (W / rect.width);
+  const my = (e.clientY - rect.top) * (H / rect.height);
+  attackerAngle = Math.atan2(my - CY, mx - CX);
+  draw();
+});
+
+canvas.addEventListener('mouseup', () => dragging = false);
+canvas.addEventListener('mouseleave', () => dragging = false);
+
+// Touch support
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches[0];
+  const mx = (t.clientX - rect.left) * (W / rect.width);
+  const my = (t.clientY - rect.top) * (H / rect.height);
+  const ap = getAttackerPos();
+  const dist = Math.sqrt((mx - ap.x) ** 2 + (my - ap.y) ** 2);
+  if (dist < 40) dragging = true;
+});
+
+canvas.addEventListener('touchmove', (e) => {
+  if (!dragging) return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches[0];
+  const mx = (t.clientX - rect.left) * (W / rect.width);
+  const my = (t.clientY - rect.top) * (H / rect.height);
+  attackerAngle = Math.atan2(my - CY, mx - CX);
+  draw();
+});
+
+canvas.addEventListener('touchend', () => dragging = false);
+
+draw();
+</script>
+
+
+</body></html>
